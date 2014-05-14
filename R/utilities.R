@@ -53,6 +53,7 @@ TXID2EG <- function(txid) {
     if (exists("txid2geneid", envir=ChIPseekerEnv, inherits=FALSE)) {
         txid2geneid <- get("txid2geneid", envir=ChIPseekerEnv)
     } else {
+        txdb <- get("TXDB", envir=ChIPseekerEnv)
         txidinfo <- transcripts(txdb, columns=c("tx_id", "tx_name", "gene_id"))
         idx <- which(sapply(txidinfo$gene_id, length) == 0)
         txidinfo[idx,]$gene_id <- txidinfo[idx,]$tx_name

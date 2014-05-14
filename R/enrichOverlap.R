@@ -90,3 +90,30 @@ enrichOverlap.gene <- function(peak1, peak2, TranscriptDb, pAdjustMethod="BH") {
                       p.adjust=padj)
     return(res)
 }
+
+
+
+##' shuffle the position of peak
+##'
+##' 
+##' @title shuffle
+##' @param peak peak file or GRanges object
+##' @param TranscriptDb TranscriptDb
+##' @return GRanges object
+##' @export
+##' @author G Yu
+shuffle <- function(peak, TranscriptDb) {
+    peak.gr <- loadPeak(peak)
+    chrLens <- seqlengths(TranscriptDb)[names(seqlengths(peak.gr))]
+    nn <- as.vector(seqnames(peak.gr))
+    ii <- order(nn)
+    w <- width(peak.gr)
+    nnt <- table(nn)
+    jj <- order(names(nnt))
+    nnt <- nnt[jj]
+    chrLens <- chrLens[jj]
+    ss <- unlist(sapply(1:length(nnt), function(i) sample(chrLens[i],nnt[i])))
+
+    res <- GRanges(seqnames=nn[ii], ranges=IRanges(ss, ss+w[ii]), strand="*")
+    return(res)   
+}
