@@ -127,7 +127,7 @@ plotDistToTSS <- function(peakAnno,
     ## p <- p + geom_text(y=-us-2, x=xpos, label="upstream", angle=90) +
     ##    geom_text(y=ds+2, x=xpos, label="downstream", angle=90)
     ## if (is.null(palette) || is.na(palette)) {
-    p <- p + scale_fill_hue("Feature", breaks=lbs, labels=lbs)
+    p <- p + scale_fill_manual(values=getCols(length(lbs)), breaks=lbs, labels=lbs)
     ##    return(p)
     ## }
     ## p <- p + scale_fill_brewer("Feature", palette=palette, breaks=lbs, labels=lbs)

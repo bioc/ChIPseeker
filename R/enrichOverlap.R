@@ -1,93 +1,98 @@
-enrichOverlap <- function(peak1, peak2, by="peak", TranscriptDb=NULL, pAdjustMethod="BH", ...) {
-    by <- match.arg(by, c("gene", "peak"))
-    if (by == "gene") {
-        res <- enrichOverlap.gene(peak1, peak2, TranscriptDb=TranscriptDb, pAdjustMethod=pAdjustMethod, ...)
-    } else {
-        ## not implemented yet
-        res <- enrichOverlap.peak(peak1, peak2, TranscriptDb=TranscriptDb, pAdjustMethod=pAdjustMethod, ...)
-    } 
-    return(res)
-}
+##' calcuate overlap significant of ChIP experiments based on their nearest gene annotation
+##'
+##' 
+##' @title enrichAnnoOverlap
+##' @param queryPeak query bed file
+##' @param targetPeak target bed file(s) or folder containing bed files
+##' @param TranscriptDb TranscriptDb
+##' @param pAdjustMethod pvalue adjustment method
+##' @param chainFile chain file for liftOver
+##' @return data.frame
+##' @export
+##' @importFrom rtracklayer import.chain
+##' @importFrom rtracklayer liftOver
+##' @author G Yu
+enrichAnnoOverlap <- function(queryPeak, targetPeak, TranscriptDb=NULL, pAdjustMethod="BH", chainFile=NULL) {
+    targetFiles <- parse_targetPeak_Param(targetPeak)
+    TranscriptDb <- loadTxDb(TranscriptDb)
+ 
+    query.anno <- annotatePeak(queryPeak, TranscriptDb=TranscriptDb,
+                               assignGenomicAnnotation=FALSE, annoDb=NULL, verbose=FALSE)
 
-enrichOverlap.peak <- function(peak1, peak2, TranscriptDb, nShuffle, pAdjustMethod="BH") {
-    if (!file.exists(peak1)) {
-        stop("peak1 should be peak file in bed format...")
+    target.gr <- lapply(targetFiles, loadPeak)
+    if (!is.null(chainFile)) {
+        chain <- import.chain(chainFile)
+        target.gr <- lapply(target.gr, liftOver, chain=chain)
     }
-    if (! any(file.exists(unlist(peak2)))) {
-        stop("peak2 should be a list of files i bed format...")
-    }
-    peak1.gr <- loadPeak(peak1)
-    peak2 <- peak2[file.exists(unlist(peak2))] 
-    peak2.gr <- lapply(peak2, loadPeak)
-    p <- sapply(peak2.gr, enrichOverlap.peak.internal,
-                peak1=peak1, TranscriptDb=TranscriptDb, nShuffle=nShuffle)
-
-    qSample <- sub(".+/", "", peak1)
-    tSample <- sub(".+/", "", peak2)
-    ol <- unlist(lapply(peak2.gr, function(i) length(intersect(peak1.gr, i))))
-    padj <- p.adjust(p, method=pAdjustMethod)
-    res <- data.frame(qSample=qSample,
-                      tSample=tSample,
-                      qLen=length(peak1.gr),
-                      tLen=unlist(lapply(peak2.gr, length)),
-                      N_OL=ol,
-                      pvalue=p,
-                      p.adjust=padj)
-
-    return(res)
-}
-
-enrichOverlap.peak.internal <- function(peak1, peak2, TranscriptDb, nShuffle=1000) {
-    peak1.gr <- loadPeak(peak1)
-    peak2.gr <- loadPeak(peak2)
-    chrLens <- seqlengths(TranscriptDb)[names(seqlengths(peak2.gr))]
-
-    shuffle.OL <- mclapply(1:nShuffle, function(i) {
-        length(intersect(peak1.gr, shuffle(peak=peak2.gr, chrLens)))
-    },
-                             mc.cores=detectCores()
-                             )
-    sol <- unlist(shuffle.OL)
-    ol <- length(intersect(peak1.gr, peak2.gr))
-
-    p <- sum(sol > ol)/nShuffle
-    return(p)
-}
-
-enrichOverlap.gene <- function(peak1, peak2, TranscriptDb, pAdjustMethod="BH") {
-    if (!file.exists(peak1)) {
-        stop("peak1 should be peak file in bed format...")
-    }
-    if (! any(file.exists(unlist(peak2)))) {
-        stop("peak2 should be a list of files i bed format...")
-    }
-    peak2 <- peak2[file.exists(unlist(peak2))]
+     
+    target.anno <- lapply(target.gr, annotatePeak, TranscriptDb=TranscriptDb,
+                          assignGenomicAnnotation=FALSE, annoDb=NULL, verbose=FALSE)
     
-    peakAnno1 <- annotatePeak(peak1, TranscriptDb=TranscriptDb, assignGenomicAnnotation=FALSE, annoDb=NULL, verbose=FALSE)
-    peakAnno2 <- lapply(peak2, function(i) annotatePeak(i, TranscriptDb=TranscriptDb, assignGenomicAnnotation=FALSE, annoDb=NULL, verbose=FALSE))
-    
+
     ChIPseekerEnv <- get("ChIPseekerEnv", envir=.GlobalEnv)
     features <- get("features", envir=ChIPseekerEnv)
-    ol <- lapply(peakAnno2, function(i) intersect(peakAnno1$geneId, i$geneId))
+    ol <- lapply(target.anno, function(i) unique(intersect(query.anno$geneId, i$geneId)))
     oln <- unlist(lapply(ol, length))
     N <- length(features)
     ## white ball
-    m <- length(unique(peakAnno1$geneId))
+    m <- length(unique(query.anno$geneId))
     ## black ball
     n <- N - m
     ## drawn
-    k <- unlist(lapply(peakAnno2, function(i) length(unique(i$geneId))))
+    k <- unlist(lapply(target.anno, function(i) length(unique(i$geneId))))
     p <- phyper(oln, m, n, k, lower.tail=FALSE)
-    qSample <- sub(".+/", "", peak1)
-    tSample <- sub(".+/", "", peak2)
+    qSample <- sub(".+/", "", queryPeak)
+    tSample <- sub(".+/", "", targetFiles)
     padj <- p.adjust(p, method=pAdjustMethod)
     res <- data.frame(qSample=qSample,
                       tSample=tSample,
-                      qLen=length(peakAnno1$geneId),
-                      tLen=unlist(lapply(peakAnno2, length)),
+                      qLen=length(unique(query.anno$geneId)),
+                      tLen=unlist(lapply(target.anno, function(i) length(unique(i$geneId)))),
                       N_OL=oln,
                       pvalue=p,
                       p.adjust=padj)
+    return(res)
+}
+
+##' calculate overlap significant of ChIP experiments based on the genome coordinations
+##'
+##' 
+##' @title enrichPeakOverlap
+##' @param queryPeak query bed file
+##' @param targetPeak target bed file(s) or folder that containing bed files
+##' @param TranscriptDb TranscriptDb
+##' @param pAdjustMethod pvalue adjustment method
+##' @param nShuffle shuffle numbers
+##' @param chainFile chain file for liftOver
+##' @return data.frame
+##' @export
+##' @importFrom rtracklayer import.chain
+##' @importFrom rtracklayer liftOver
+##' @author G Yu
+enrichPeakOverlap <- function(queryPeak, targetPeak, TranscriptDb=NULL, pAdjustMethod="BH", nShuffle=1000, chainFile=NULL) {
+    targetFiles <- parse_targetPeak_Param(targetPeak)
+    TranscriptDb <- loadTxDb(TranscriptDb)
+    query.gr <- loadPeak(queryPeak)
+    target.gr <- lapply(targetFiles, loadPeak)
+    if (!is.null(chainFile)) {
+        chain <- import.chain(chainFile)
+        target.gr <- lapply(target.gr, liftOver, chain=chain)
+    }
+    
+    p.ol <- enrichOverlap.peak.internal(query.gr, target.gr, TranscriptDb, nShuffle)
+    p <- p.ol$pvalue
+    ol <- p.ol$overlap
+    qSample <- sub(".+/", "", queryPeak)  ## remove path, only keep file name
+    tSample <- sub(".+/", "", targetFiles) 
+    padj <- p.adjust(p, method=pAdjustMethod)
+    res <- data.frame(qSample=qSample,
+                      tSample=tSample,
+                      qLen=length(query.gr),
+                      tLen=unlist(lapply(target.gr, length)),
+                      N_OL=ol,
+                      pvalue=p,
+                      p.adjust=padj)
+    
     return(res)
 }
 
@@ -97,13 +102,12 @@ enrichOverlap.gene <- function(peak1, peak2, TranscriptDb, pAdjustMethod="BH") {
 ##'
 ##' 
 ##' @title shuffle
-##' @param peak peak file or GRanges object
+##' @param peak.gr GRanges object
 ##' @param TranscriptDb TranscriptDb
 ##' @return GRanges object
 ##' @export
 ##' @author G Yu
-shuffle <- function(peak, TranscriptDb) {
-    peak.gr <- loadPeak(peak)
+shuffle <- function(peak.gr, TranscriptDb) {
     chrLens <- seqlengths(TranscriptDb)[names(seqlengths(peak.gr))]
     nn <- as.vector(seqnames(peak.gr))
     ii <- order(nn)
@@ -117,3 +121,33 @@ shuffle <- function(peak, TranscriptDb) {
     res <- GRanges(seqnames=nn[ii], ranges=IRanges(ss, ss+w[ii]), strand="*")
     return(res)   
 }
+
+
+
+
+##' @importFrom BiocGenerics intersect
+##' @importFrom GenomicRanges seqlengths
+enrichOverlap.peak.internal <- function(query.gr, target.gr, TranscriptDb, nShuffle=1000) {
+    idx <- sample(1:length(target.gr), nShuffle, replace=TRUE)
+
+    len <- unlist(lapply(target.gr, length))
+    
+    rr <- mclapply(idx, function(i) {
+        tarShuffle <- shuffle(target.gr[[i]], TranscriptDb)
+        length(intersect(query.gr, tarShuffle))/len[i]
+    }, mc.cores=detectCores()-1
+                   )
+    rr <- unlist(rr) ## random ratio
+
+    qLen <- mclapply(target.gr, function(tt) {
+        length(intersect(query.gr, tt))
+    }, mc.cores=detectCores()-1
+                  )
+    qLen <- unlist(qLen)
+    ## query ratio
+    qr <- qLen/len
+    p <- lapply(qr, function(q) mean(rr>q))
+    res <- list(pvalue=unlist(p), overlap=qLen)
+    return(res)
+}
+

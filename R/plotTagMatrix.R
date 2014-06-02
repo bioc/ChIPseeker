@@ -1,3 +1,22 @@
+##' plot the profile of peaks
+##'
+##' 
+##' @title plotAvgProf 
+##' @param tagMatrix tagMatrix or a list of tagMatrix
+##' @param xlim xlim
+##' @param xlab x label
+##' @param ylab y label
+##' @return ggplot object
+##' @export
+##' @author G Yu
+plotAvgProf <- function(tagMatrix, xlim,
+                        xlab="Genomic Region (5'->3')",
+                        ylab = "Read Count Frequency") {
+    p <- plotAvgProf.internal(tagMatrix, xlim=xlim,
+                              xlab=xlab, ylab=ylab)
+    
+    return(p)
+}
 
 ##' plot the profile of peaks that align to flank sequences of TSS 
 ##'
@@ -14,12 +33,12 @@
 ##' @return ggplot object
 ##' @export
 ##' @author G Yu
-plotAvgProf <- function(peak, weightCol=NULL, TranscriptDb=NULL,
-                         upstream=1000, downstream=1000,
-                         xlab="Genomic Region (5'->3')",
-                         ylab="Read Count Frequency",
-                         verbose=TRUE) {
-
+plotAvgProf2 <- function(peak, weightCol=NULL, TranscriptDb=NULL,
+                        upstream=1000, downstream=1000,
+                        xlab="Genomic Region (5'->3')",
+                        ylab="Read Count Frequency",
+                        verbose=TRUE) {
+    
     if (verbose) {
         cat(">> preparing promoter regions...\t",
             format(Sys.time(), "%Y-%m-%d %X"), "\n")
@@ -48,7 +67,26 @@ plotAvgProf <- function(peak, weightCol=NULL, TranscriptDb=NULL,
     return(p)
 }
 
-
+##' plot the heatmap of tagMatrix
+##'
+##' 
+##' @title tagHeatmap
+##' @param tagMatrix tagMatrix or a list of tagMatrix
+##' @param xlim xlim
+##' @param xlab xlab
+##' @param ylab ylab
+##' @param title title
+##' @param color color
+##' @return figure
+##' @export
+##' @author G Yu
+tagHeatmap <- function(tagMatrix, xlim, xlab="", ylab="", title=NULL, color="red") {
+    listFlag <- FALSE
+    if (is(tagMatrix, "list")) {
+        listFlag <- TRUE
+    }
+    peakHeatmap.internal2(tagMatrix, xlim, listFlag, color, xlab, ylab, title)
+}
 
 ##' plot the heatmap of peaks align to flank sequences of TSS
 ##'
@@ -101,34 +139,45 @@ peakHeatmap <- function(peak, weightCol=NULL, TranscriptDb=NULL,
     }
    
     xlim=c(-upstream, downstream)
+    
+    peakHeatmap.internal2(tagMatrix, xlim, listFlag, color, xlab, ylab, title)
+
+    if (verbose) {
+        cat(">> done...\t\t\t",
+            format(Sys.time(), "%Y-%m-%d %X"), "\n")
+    }
+    invisible(tagMatrix)
+}
+
+peakHeatmap.internal2 <- function(tagMatrix, xlim, listFlag, color, xlab, ylab, title) {
     if ( is.null(xlab) || is.na(xlab))
         xlab <- ""
     if ( is.null(ylab) || is.na(ylab))
         ylab <- ""
-    
+
     if (listFlag) {
-        ncol <- length(tagMatrix)
+        nc <- length(tagMatrix)
         if ( is.null(color) || is.na(color) ) {
-            cols <- getCols(ncol)
-        }
-        if (length(color) != ncol) {
-            cols <- rep(color[1], ncol)
+            cols <- getCols(nc)
+        } else if (length(color) != nc) {
+            cols <- rep(color[1], nc)
         } else {
             cols <- color
         }
+        
         if (is.null(title) || is.na(title))
-            title <- names(peak)
-        if (length(xlab) != ncol) {
-            xlab <- rep(xlab[1], ncol)
+            title <- names(tagMatrix)
+        if (length(xlab) != nc) {
+            xlab <- rep(xlab[1], nc)
         }
-        if (length(ylab) != ncol) {
-            ylab <- rep(ylab[1], ncol)
+        if (length(ylab) != nc) {
+            ylab <- rep(ylab[1], nc)
         }
-        if (length(title) != ncol) {
-            title <- rep(title[1], ncol)
+        if (length(title) != nc) {
+            title <- rep(title[1], nc)
         }
-        par(mfrow=c(1, ncol))
-        for (i in 1:ncol) {
+        par(mfrow=c(1, nc))
+        for (i in 1:nc) {
             peakHeatmap.internal(tagMatrix[[i]], xlim, cols[i], xlab[i], ylab[i], title[i])
         }
     } else {
@@ -138,11 +187,6 @@ peakHeatmap <- function(peak, weightCol=NULL, TranscriptDb=NULL,
             title <- ""
         peakHeatmap.internal(tagMatrix, xlim, color, xlab, ylab, title)
     }
-    if (verbose) {
-        cat(">> done...\t\t\t",
-            format(Sys.time(), "%Y-%m-%d %X"), "\n")
-    }
-    invisible(tagMatrix)
 }
 
 
@@ -167,6 +211,7 @@ peakHeatmap.internal <- function(tagMatrix, xlim=NULL, color="red", xlab="", yla
 ##' @importFrom ggplot2 geom_line
 ##' @importFrom ggplot2 geom_vline
 ##' @importFrom ggplot2 scale_x_continuous
+##' @importFrom ggplot2 scale_color_manual
 ##' @importFrom ggplot2 xlab
 ##' @importFrom ggplot2 ylab
 ##' @importFrom ggplot2 theme_bw

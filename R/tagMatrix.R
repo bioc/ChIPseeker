@@ -1,3 +1,13 @@
+##' prepare the promoter regions
+##'
+##'
+##' @title getPromoters
+##' @param TranscriptDb TranscriptDb
+##' @param upstream upstream from TSS site
+##' @param downstream downstream from TSS site
+##' @param by one of gene or transcript
+##' @return GRanges object
+##' @export
 ##' @importFrom BiocGenerics unique
 ##' @importFrom GenomicRanges GRanges
 ##' @importFrom GenomicRanges unlist
@@ -43,6 +53,15 @@ getPromoters <- function(TranscriptDb=NULL,
     return(promoters)
 }
 
+##' calculate the tag matrix
+##'
+##'
+##' @title getTagMatrix
+##' @param peak peak file or GRanges object
+##' @param weightCol column name of weight, default is NULL
+##' @param windows a collection of region with equal size, eg. promoter region.
+##' @return tagMatrix
+##' @export
 ##' @importFrom IRanges subsetByOverlaps
 ##' @importFrom IRanges elementLengths
 ##' @importFrom IRanges width

@@ -25,8 +25,26 @@
     
 }
 
+
 getCols <- function(n) {
-    colorRampPalette(brewer.pal(12, "Set3"))(n)  
+    col <- c("#8dd3c7", "#ffffb3", "#bebada",
+             "#fb8072", "#80b1d3", "#fdb462",
+             "#b3de69", "#fccde5", "#d9d9d9",
+             "#bc80bd", "#ccebc5", "#ffed6f")
+             
+    col2 <- c("#1f78b4", "#ffff33", "#c2a5cf",
+             "#ff7f00", "#810f7c", "#a6cee3",
+             "#006d2c", "#4d4d4d", "#8c510a",
+             "#d73027", "#78c679", "#7f0000",
+             "#41b6c4", "#e7298a", "#54278f")
+    
+    col3 <- c("#a6cee3", "#1f78b4", "#b2df8a",
+              "#33a02c", "#fb9a99", "#e31a1c",
+              "#fdbf6f", "#ff7f00", "#cab2d6",
+              "#6a3d9a", "#ffff99", "#b15928")
+    
+    ## colorRampPalette(brewer.pal(12, "Set3"))(n)
+    colorRampPalette(col3)(n)  
 }
 
 
@@ -250,10 +268,12 @@ getGene <- function(TranscriptDb, by="gene") {
 ##' @export
 ##' @author G Yu
 getSampleFiles <- function() {
-    dir <- system.file("extdata", "GSE40740", package="ChIPseeker")
+    dir <- system.file("extdata", "GEO_sample_data", package="ChIPseeker")
     files <- list.files(dir)
-    protein <- sub("GSM\\d+_", "", files)
-    protein <- sub("_.+", "", protein)
+    ## protein <- sub("GSM\\d+_", "", files)
+    ## protein <- sub("_.+", "", protein)
+    protein <- gsub(pattern='GSM\\d+_(\\w+_\\w+)_.*', replacement='\\1',files)
+    protein <- sub("_Chip.+", "", protein)
     res <- paste(dir, files, sep="/")
     res <- as.list(res)
     names(res) <- protein
@@ -269,3 +289,40 @@ getSampleFiles <- function() {
 ##     close(b)
 ##     return(d)
 ## }
+
+
+is.dir <- function(dir) {
+    if (file.exists(dir) == FALSE)
+        return(FALSE)
+    return(file.info(dir)$isdir)
+}
+
+
+parse_targetPeak_Param <- function(targetPeak) {
+    if (length(targetPeak) == 1) {
+        if (is.dir(targetPeak)) {
+            files <- list.files(path=targetPeak)
+            idx <- unlist(sapply(c("bed", "bedGraph", "Peak"), grep, x=files))
+            idx <- sort(unique(idx))
+            files <- files[idx]
+            targetPeak <- sub("/$", "", targetPeak)
+            res <- paste(targetPeak, files, sep="/")
+        } else {
+            if (!file.exists(targetPeak)) {
+                stop("bed file is not exists...")
+            } else {
+                res <- targetPeak
+            }
+        }
+    } else {
+        if (is.dir(targetPeak[1])) {
+            stop("targetPeak should be a vector of bed file names or a folder containing bed files...")
+        } else {
+            res <- targetPeak[file.exists(targetPeak)]
+            if (length(res) == 0) {
+                stop("targetPeak file not exists...")
+            }
+        }
+    }
+    return(res)
+}
