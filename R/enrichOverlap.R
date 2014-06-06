@@ -125,24 +125,37 @@ shuffle <- function(peak.gr, TranscriptDb) {
 
 
 
-##' @importFrom BiocGenerics intersect
-##' @importFrom GenomicRanges seqlengths
+##' @importFrom GenomeInfoDb intersect
+##' @importFrom GenomeInfoDb seqlengths
 enrichOverlap.peak.internal <- function(query.gr, target.gr, TranscriptDb, nShuffle=1000) {
     idx <- sample(1:length(target.gr), nShuffle, replace=TRUE)
 
     len <- unlist(lapply(target.gr, length))
-    
-    rr <- mclapply(idx, function(i) {
-        tarShuffle <- shuffle(target.gr[[i]], TranscriptDb)
-        length(intersect(query.gr, tarShuffle))/len[i]
-    }, mc.cores=detectCores()-1
-                   )
+
+    if(Sys.info()[1] == "Windows") {
+        rr <- lapply(idx, function(i) {
+            tarShuffle <- shuffle(target.gr[[i]], TranscriptDb)
+            length(intersect(query.gr, tarShuffle))/len[i]
+        })
+    } else {
+        rr <- mclapply(idx, function(i) {
+            tarShuffle <- shuffle(target.gr[[i]], TranscriptDb)
+            length(intersect(query.gr, tarShuffle))/len[i]
+        }, mc.cores=detectCores()-1
+                       )
+    }
     rr <- unlist(rr) ## random ratio
 
-    qLen <- mclapply(target.gr, function(tt) {
-        length(intersect(query.gr, tt))
-    }, mc.cores=detectCores()-1
-                  )
+    if (Sys.info()[1] == "Windows") {
+        qLen <- lapply(target.gr, function(tt) {
+            length(intersect(query.gr, tt))
+        })
+    } else {
+        qLen <- mclapply(target.gr, function(tt) {
+            length(intersect(query.gr, tt))
+        }, mc.cores=detectCores()-1
+                         )
+    }
     qLen <- unlist(qLen)
     ## query ratio
     qr <- qLen/len
