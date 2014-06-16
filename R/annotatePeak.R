@@ -6,8 +6,11 @@
 ##' @param tssRegion Region Range of TSS 
 ##' @param as one of "data.frame", "GRanges" and "txt"
 ##' @param TranscriptDb TranscriptDb object
+##' @param level one of transcript and gene
 ##' @param assignGenomicAnnotation logical, assign peak genomic annotation or not
 ##' @param annoDb annotation package
+##' @param addFlankGeneInfo logical, add flanking gene information from the peaks 
+##' @param flankDistance distance of flanking sequence
 ##' @param verbose print message or not
 ##' @return data.frame or GRanges object with columns of:
 ##' 
@@ -54,8 +57,11 @@ annotatePeak <- function(peak,
                          tssRegion=c(-3000, 3000),
                          as="GRanges",
                          TranscriptDb=NULL,
+                         level = "transcript",
                          assignGenomicAnnotation=TRUE,
                          annoDb=NULL,
+                         addFlankGeneInfo=FALSE,
+                         flankDistance=5000,
                          verbose=TRUE) {
     
     output <- match.arg(as, c("data.frame", "GRanges", "txt"))
@@ -75,8 +81,12 @@ annotatePeak <- function(peak,
             format(Sys.time(), "%Y-%m-%d %X"), "\n")
 
     TranscriptDb <- loadTxDb(TranscriptDb)
-    
-    features <- getGene(TranscriptDb, by="gene")
+
+    if (level=="transcript") {
+        features <- getGene(TranscriptDb, by="transcript")
+    } else {
+         features <- getGene(TranscriptDb, by="gene")
+    }
     
     if (verbose)
         cat(">> identifying nearest features...\t\t",
@@ -102,8 +112,15 @@ annotatePeak <- function(peak,
     ## duplicated names since more than 1 peak may annotated by only 1 gene
     names(nearestFeatures) <- NULL
     nearestFeatures.df <- as.data.frame(nearestFeatures)
-    colnames(nearestFeatures.df) <- c("geneChr", "geneStart", "geneEnd",
-                                      "geneLength", "geneStrand", "geneId")
+
+    if (level == "transcript") {
+        colnames(nearestFeatures.df) <- c("geneChr", "geneStart", "geneEnd",
+                                          "geneLength", "geneStrand", "geneId", "transcriptId")
+        nearestFeatures.df$geneId <- TXID2EG(as.character(nearestFeatures.df$geneId), geneIdOnly=TRUE)
+    } else {
+        colnames(nearestFeatures.df) <- c("geneChr", "geneStart", "geneEnd",
+                                          "geneLength", "geneStrand", "geneId")
+    }
 
     ## append annotation to peak.gr
     if (!is.null(annotation))
@@ -114,10 +131,7 @@ annotatePeak <- function(peak,
     }
 
     elementMetadata(peak.gr)[["distanceToTSS"]] <- distance
-    ## res <- cbind(peak.df,
-    ##              annotation=annotation,
-    ##              nearestFeatures.df,
-    ##              distanceToTSS=distance)
+  
     if (!is.null(annoDb)) {
         if (verbose)
             cat(">> adding gene annotation...\t\t\t",
@@ -128,9 +142,26 @@ annotatePeak <- function(peak,
             for(cn in colnames(geneAnno)[-1])
                 elementMetadata(peak.gr)[[cn]] <- geneAnno[, cn]
         }
-        ## out <- cbind(res, geneAnno[,-1])
     }
 
+    
+    if (addFlankGeneInfo == TRUE) {
+        if (verbose)
+            cat(">> adding flank feature information from peaks...\t",
+                format(Sys.time(), "%Y-%m-%d %X"), "\n")
+ 
+        flankInfo <- getAllFlankingGene(peak.gr, features, flankDistance)
+        elementMetadata(peak.gr)[["flank_txIds"]] <- NA
+        elementMetadata(peak.gr)[["flank_geneIds"]] <- NA
+        elementMetadata(peak.gr)[["flank_gene_distances"]] <- NA
+        
+        elementMetadata(peak.gr)[["flank_txIds"]][flankInfo$peakIdx] <- flankInfo$flank_txIds
+        elementMetadata(peak.gr)[["flank_geneIds"]][flankInfo$peakIdx] <- flankInfo$flank_geneIds
+        elementMetadata(peak.gr)[["flank_gene_distances"]][flankInfo$peakIdx] <- flankInfo$flank_gene_distances
+        
+    }
+
+    
     if (output == "txt") {
         if (input == "gr") {
             outfile <- "peak_anno.txt"
@@ -432,3 +463,58 @@ getGenomicAnnotation <- function(peaks,
     annotation[annotation == "Intergenic"] = "Distal Intergenic"
     return(annotation)
 }
+
+
+
+##' @importFrom plyr ddply
+getAllFlankingGene <- function(peak.gr, features, distance=5000) {
+    peak.gr2 <- peak.gr
+    start(ranges(peak.gr)) = start(ranges(peak.gr)) - distance
+    end(ranges(peak.gr)) = end(ranges(peak.gr)) + distance
+    hit <- findOverlaps(peak.gr, features)
+    qh <- queryHits(hit)
+    sh <- subjectHits(hit)
+    featureHit <- features[sh]
+    eg <- TXID2EG(featureHit$tx_id, geneIdOnly=TRUE)
+    names(featureHit)=NULL
+
+    hitInfo <- as.data.frame(featureHit)
+    hitInfo$geneId <- eg
+    hitInfo$peakIdx <- qh
+
+    overlapHit <- findOverlaps(peak.gr2, featureHit)
+    hitInfo$distance <- NA
+    hitInfo$distance[subjectHits(overlapHit)] <- 0
+
+    psD <- ifelse(strand(featureHit) == "+",
+                  start(peak.gr2[qh]) - start(featureHit),
+                  end(featureHit)-end(peak.gr2[qh]))
+    
+    peD <- ifelse(strand(featureHit) == "+",
+                  end(peak.gr2[qh]) - start(featureHit),
+                  end(featureHit)-start(peak.gr2[qh]))
+
+    idx <- abs(psD) > abs(peD)
+    dd <- psD
+    dd[idx] <- peD[idx]
+
+    ii <- is.na(hitInfo$distance)
+    hitInfo$distance[ii] <- dd[ii]
+
+    peakIdx <- tx_name <- geneId <- distance <- NULL
+    hitInfo2 <- ddply(hitInfo, .(peakIdx), transform,
+                      flank_txIds=paste(tx_name, collapse=";"),
+                      flank_geneIds=paste(geneId, collapse=";"),
+                      flank_gene_distances=paste(distance, collapse=";"))
+
+    res <- hitInfo2[,c("peakIdx", "flank_txIds", "flank_geneIds", "flank_gene_distances")]
+    res <- unique(res)
+
+    res$flank_txIds <- as.character(res$flank_txIds)
+    res$flank_geneIds <- as.character(res$flank_geneIds)
+    res$flank_gene_distances <- as.character(res$flank_gene_distances)
+    
+    return(res)
+    
+}
+

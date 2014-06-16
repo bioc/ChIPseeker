@@ -125,8 +125,8 @@ shuffle <- function(peak.gr, TranscriptDb) {
 
 
 
-##' @importFrom GenomeInfoDb intersect
-##' @importFrom GenomeInfoDb seqlengths
+##' @importFrom GenomicRanges intersect
+##' @importFrom GenomicRanges seqlengths
 enrichOverlap.peak.internal <- function(query.gr, target.gr, TranscriptDb, nShuffle=1000) {
     idx <- sample(1:length(target.gr), nShuffle, replace=TRUE)
 
