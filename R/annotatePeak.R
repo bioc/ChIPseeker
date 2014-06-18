@@ -292,8 +292,8 @@ getNearestFeatureIndicesAndDistances <- function(peaks, features) {
     peF <- features[pe.idx]
     ## feature distances from peak end
     peD <- ifelse(strand(peF) == "+",
-                  start(peaks) - start(peF),
-                  end(peF)-end(peaks))
+                  end(peaks) - start(peF),
+                  end(peF)-start(peaks))
 
     pse <- data.frame(ps=psD, pe=peD)
     j <- apply(pse, 1, function(i) which.min(abs(i)))
