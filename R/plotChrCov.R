@@ -86,7 +86,7 @@ getChrCov <- function(peak.gr, weightCol) {
         }
         cat(format(Sys.time(), "%Y-%m-%d %X"), "\n")
         
-        M <- summary(Matrix(tagMatrixList[[i]]))
+        M <- summary(Matrix(tagMatrixList[[i]],sparse=TRUE))
         tm[[i]] <- data.frame(chr=nn[i],
                               pos=M$j,
                               cnt=M$x)
