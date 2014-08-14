@@ -89,6 +89,15 @@ plotDistToTSS <- function(peakAnno,
             peakDist$freq[idx] <- peakDist$freq[idx]/sum(peakDist$freq[idx])
         }
         peakDist$freq = peakDist$freq * 100
+
+        zeroDist <- peakDist[peakDist$sign == 0,]
+        zeroDist$freq <- zeroDist$freq/2
+        zeroDist$sign <- -1
+        peakDist[peakDist$sign == 0,] <- zeroDist
+        zeroDist$sign <- 1
+        peakDist <- rbind(peakDist, zeroDist)        
+        peakDist <- ddply(peakDist, c(categoryColumn, "Feature", "sign"), summarise, freq=sum(freq))
+        
         totalFreq <- ddply(peakDist, c(categoryColumn, "sign"), summarise, total=sum(freq))
     }
 
