@@ -100,6 +100,9 @@ annotatePeak <- function(peak,
     ## distance
     distance <- idx.dist$distance
 
+    ## update peak, remove un-map peak if exists.
+    peak.gr <- idx.dist$peak
+    
     if (verbose)
         cat(">> assigning genomic annotation...\t\t",
             format(Sys.time(), "%Y-%m-%d %X"), "\n")
@@ -261,7 +264,7 @@ addGeneAnno <- function(annoDb, geneID, type){
 ##' @title getNearestFeatureIndicesAndDistances 
 ##' @param peaks peak in GRanges 
 ##' @param features features in GRanges
-##' @return data.frame
+##' @return list
 ##' @importFrom IRanges precede
 ##' @importFrom IRanges follow
 ##' @importFrom IRanges start
@@ -280,6 +283,14 @@ getNearestFeatureIndicesAndDistances <- function(peaks, features) {
     ps.idx <- precede(peaks, features)
     ## nearest from peak end
     pe.idx <- follow(peaks, features)
+
+    na.idx <- is.na(ps.idx) | is.na(pe.idx)
+    if (sum(na.idx) > 1) {
+        ps.idx <- ps.idx[!na.idx]
+        pe.idx <- pe.idx[!na.idx]
+        peaks <- peaks[!na.idx]
+    }
+    
     
     ## features from nearest peak start
     psF <- features[ps.idx]
@@ -330,7 +341,7 @@ getNearestFeatureIndicesAndDistances <- function(peaks, features) {
     ##     dd[isOverlap] <- 0
     ## }
     
-    res <- data.frame(index=idx, distance=dd)
+    res <- list(index=idx, distance=dd, peak=peaks)
     return(res)
 }
 
