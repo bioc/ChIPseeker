@@ -69,6 +69,8 @@ covplot <- function(peak, weightCol=NULL,
         x <- tm[i,]
         data.table(chr=x$chr, pos=seq(x$start, x$end, by=bin), cnt=x[,4])
     })
+
+    chr <- start <- end <- cnt <- pos <- value <- NULL
     
     tm2 <- do.call("rbind", tml)
     tm2 <- ddply(tm2, .(chr, pos), transform, value=sum(cnt))
@@ -106,17 +108,23 @@ getChrCov <- function(peak.gr, weightCol, chrs, xlim) {
 
     cov <- lapply(peak.cov, slice, lower=1)
 
+    get.runValue <- function(x) {
+        value <- x@subject@values
+        value[value != 0]
+    }
+    
     ldf <- lapply(1:length(cov), function(i) {
         x <- cov[[i]]
         data.frame(chr=names(cov[i]),
                    start=start(x),
                    end = end(x),
-                   cnt = runValue(x)[[1]]
+                   cnt = get.runValue(x)
                                         # sapply(x, runValue)
                                         # value <- x@subject@values
                                         # value <- value[value != 0]
                    )
     })
+    chr <- start <- end <- cnt <- NULL
     
     df <- do.call("rbind", ldf)
     chr.sorted <- sortChrName(as.character(unique(df$chr)))
