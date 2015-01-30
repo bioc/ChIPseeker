@@ -1,3 +1,8 @@
+CHANGES IN VERSION 1.2.2
+------------------------
+ o bug fixed in getNearestFeatureIndicesAndDistances when peak in the
+   very begining or end of the chromosome <2015-01-30, Fri>
+
 CHANGES IN VERSION 1.1.21
 ------------------------
  o use data.table instead of data.frame to optimize covplot <2014-10-06, Mon>
