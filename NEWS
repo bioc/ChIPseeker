@@ -1,3 +1,8 @@
+CHANGES IN VERSION 1.2.3
+------------------------
+ o when peak is exactly located at gene end, NA will be generated and throw error when assigning downstream of gene end. 
+   This bug has been fixed <2015-02-03, Tue>
+
 CHANGES IN VERSION 1.2.2
 ------------------------
  o bug fixed in getNearestFeatureIndicesAndDistances when peak in the
