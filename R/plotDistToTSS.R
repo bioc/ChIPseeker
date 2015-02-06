@@ -70,7 +70,6 @@ plotDistToTSS.data.frame <- function(peakDist,
         peakDist <- ddply(peakDist, .(Feature, sign), summarise, freq=length(Feature))
         peakDist$freq = peakDist$freq/sum(peakDist$freq)
         peakDist$freq = peakDist$freq * 100
-        totalFreq <- ddply(peakDist, .(sign), summarise, total=sum(freq))
     } else {
         peakDist <- ddply(peakDist, c(categoryColumn, "Feature", "sign"), summarise, freq=length(Feature))
         nn <- unique(peakDist[, categoryColumn])
@@ -78,19 +77,25 @@ plotDistToTSS.data.frame <- function(peakDist,
             idx <- peakDist[, categoryColumn] == nn[i]
             peakDist$freq[idx] <- peakDist$freq[idx]/sum(peakDist$freq[idx])
         }
-        peakDist$freq = peakDist$freq * 100
-
-        zeroDist <- peakDist[peakDist$sign == 0,]
-        zeroDist$freq <- zeroDist$freq/2
-        zeroDist$sign <- -1
-        peakDist[peakDist$sign == 0,] <- zeroDist
-        zeroDist$sign <- 1
-        peakDist <- rbind(peakDist, zeroDist)        
-        peakDist <- ddply(peakDist, c(categoryColumn, "Feature", "sign"), summarise, freq=sum(freq))
-          
-        totalFreq <- ddply(peakDist, c(categoryColumn, "sign"), summarise, total=sum(freq))
+        peakDist$freq = peakDist$freq * 100       
     }
 
+    zeroDist <- peakDist[peakDist$sign == 0,]
+    zeroDist$freq <- zeroDist$freq/2
+    zeroDist$sign <- -1
+    peakDist[peakDist$sign == 0,] <- zeroDist
+    zeroDist$sign <- 1
+    peakDist <- rbind(peakDist, zeroDist)
+    
+    if (categoryColumn == 1) {
+        peakDist <- ddply(peakDist, c("Feature", "sign"), summarise, freq=sum(freq))
+        totalFreq <- ddply(peakDist, .(sign), summarise, total=sum(freq))
+    } else {
+        peakDist <- ddply(peakDist, c(categoryColumn, "Feature", "sign"), summarise, freq=sum(freq))
+        
+        totalFreq <- ddply(peakDist, c(categoryColumn, "sign"), summarise, total=sum(freq))
+    }
+    
     ## preparing ylim and y tick labels
     ds = max(totalFreq$total[totalFreq$sign == 1])
     dslim = ceiling(ds/10) * 10
