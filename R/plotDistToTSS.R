@@ -32,11 +32,13 @@
 ##' @importFrom ggplot2 scale_fill_manual
 ##' @importFrom ggplot2 geom_text
 ##' @examples
+##' \dontrun{
 ##' require(TxDb.Hsapiens.UCSC.hg19.knownGene)
 ##' txdb <- TxDb.Hsapiens.UCSC.hg19.knownGene
 ##' peakfile <- system.file("extdata", "sample_peaks.txt", package="ChIPseeker")
 ##' peakAnno <- annotatePeak(peakfile, TxDb=txdb)
 ##' plotDistToTSS(peakAnno)
+##' }
 ##' @seealso \code{\link{annotatePeak}}
 ##' @author Guangchuang Yu \url{http://ygc.name}
 plotDistToTSS.data.frame <- function(peakDist,
@@ -68,8 +70,8 @@ plotDistToTSS.data.frame <- function(peakDist,
     ## count frequencies
     if (categoryColumn == 1) {
         peakDist <- ddply(peakDist, .(Feature, sign), summarise, freq=length(Feature))
-        peakDist$freq = peakDist$freq/sum(peakDist$freq)
-        peakDist$freq = peakDist$freq * 100
+        peakDist$freq <- peakDist$freq/sum(peakDist$freq)
+        peakDist$freq <- peakDist$freq * 100
     } else {
         peakDist <- ddply(peakDist, c(categoryColumn, "Feature", "sign"), summarise, freq=length(Feature))
         nn <- unique(peakDist[, categoryColumn])
@@ -77,15 +79,17 @@ plotDistToTSS.data.frame <- function(peakDist,
             idx <- peakDist[, categoryColumn] == nn[i]
             peakDist$freq[idx] <- peakDist$freq[idx]/sum(peakDist$freq[idx])
         }
-        peakDist$freq = peakDist$freq * 100       
+        peakDist$freq <- peakDist$freq * 100       
     }
 
-    zeroDist <- peakDist[peakDist$sign == 0,]
-    zeroDist$freq <- zeroDist$freq/2
-    zeroDist$sign <- -1
-    peakDist[peakDist$sign == 0,] <- zeroDist
-    zeroDist$sign <- 1
-    peakDist <- rbind(peakDist, zeroDist)
+    if (any(peakDist$sign == 0)) {
+        zeroDist <- peakDist[peakDist$sign == 0,]
+        zeroDist$freq <- zeroDist$freq/2
+        zeroDist$sign <- -1
+        peakDist[peakDist$sign == 0,] <- zeroDist
+        zeroDist$sign <- 1
+        peakDist <- rbind(peakDist, zeroDist)
+    }
     
     if (categoryColumn == 1) {
         peakDist <- ddply(peakDist, c("Feature", "sign"), summarise, freq=sum(freq))
