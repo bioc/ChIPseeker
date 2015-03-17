@@ -148,7 +148,7 @@ getGenomicAnnotation <- function(peaks,
     dd2[-na.idx] <- dd
 
     for (i in 1:3) {
-        j <- which(annotation == "Intergenic" & abs(dd2) <= i*1000)
+        j <- which(annotation == "Intergenic" & abs(dd2) <= i*1000 && dd != 0)
         if (length(j) > 0) {
             if (i == 1) {
                 lbs <- "Downstream (<1kb)"
