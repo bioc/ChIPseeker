@@ -66,7 +66,7 @@ ChIPseeker is an R package for annotating ChIP-seq data analysis. It supports an
       \\
       G Yu, LG Wang, QY He. \textbf{ChIPseeker: an R/Bioconductor package for} \\
       \textbf{ChIP peak annotation, comparison and visualization}. \\
-      \emph{Bioinformatics} 2015. \\
+      \emph{Bioinformatics} 2015. 31(14): 2382-2383.\\
       \url{http://dx.doi.org/10.1093/bioinformatics/btv145} \\
       \hline
     \end{tabular}
