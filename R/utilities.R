@@ -152,7 +152,8 @@ TXID2EGID <- function(txid) {
 }
 
 getFirstHitIndex <- function(x) {
-    sapply(unique(x), function(i) which(x == i)[1])
+    ## sapply(unique(x), function(i) which(x == i)[1])
+    which(!duplicated(x))
 }
 
 ##' calculate the overlap matrix, which is useful for vennplot
