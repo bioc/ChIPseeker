@@ -153,7 +153,8 @@ annotatePeak <- function(peak,
         if (verbose)
             cat(">> adding gene annotation...\t\t\t",
                 format(Sys.time(), "%Y-%m-%d %X"), "\n")
-        IDType <- metadata(TxDb)[8,2]     
+        md <- metadata(TxDb)
+        IDType <- md[grep("Type of Gene ID", md[,1]), 2]
         geneAnno <- addGeneAnno(annoDb, peak.gr$geneId, type=IDType)
         if (! all(is.na(geneAnno))) {
             for(cn in colnames(geneAnno)[-1]) {
