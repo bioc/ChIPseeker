@@ -40,6 +40,7 @@ plotChrCov <- function(peak, weightCol=NULL,
 ##' @importFrom ggplot2 element_text
 ##' @importFrom ggplot2 xlab
 ##' @importFrom ggplot2 ylab
+##' @importFrom ggplot2 xlim
 ##' @importFrom ggplot2 ggtitle
 ##' @importFrom GenomeInfoDb seqlengths
 ##' @export
@@ -72,6 +73,10 @@ covplot <- function(peak, weightCol=NULL,
     p <- p + xlab(xlab) + ylab(ylab) + ggtitle(title)
     p <- p + scale_y_continuous(expand=c(0,0))
     p <- p + theme(strip.text.y=element_text(angle=360))
+
+    if (!is.null(xlim) && !is.na(xlim) && is.numeric(xlim) && length(xlim) == 2) {
+        p <- p + xlim(xlim)
+    }
     
     return(p)
 }
