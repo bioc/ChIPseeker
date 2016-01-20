@@ -18,6 +18,17 @@ getNearestFeatureIndicesAndDistances <- function(peaks, features) {
 
     ## only keep start position based on strand
     start(features) <- end(features) <- ifelse(strand(features) == "+", start(features), end(features))
+
+    ## add dummy NA feature for peaks that are at the last or first feature 
+    ## suggested by Michael Kluge
+    features.bak <- features
+    seqlevels(features) <- c(seqlevels(features), "chrNA")
+    dummy <- GRanges("chrNA", IRanges(1,1))
+    dummy$tx_id <- -1
+    dummy$tx_name <- "NA"
+    features <- append(features, dummy)
+    dummyID <- length(features)
+
     
     ## nearest from peak start
     ps.idx <- follow(peaks, features)
@@ -25,13 +36,19 @@ getNearestFeatureIndicesAndDistances <- function(peaks, features) {
     ## nearest from peak end
     pe.idx <- precede(peaks, features)
     
-    na.idx <- is.na(ps.idx) | is.na(pe.idx)
+    na.idx <- is.na(ps.idx) & is.na(pe.idx)
     ## if (sum(na.idx) > 1) {
     if (sum(na.idx) > 0) { ## suggested by Thomas Schwarzl
         ps.idx <- ps.idx[!na.idx]
         pe.idx <- pe.idx[!na.idx]
         peaks <- peaks[!na.idx]
     }
+
+    
+    # set NA values to dummy value if only one entry is affected
+    ps.idx[is.na(ps.idx)] <- dummyID
+    pe.idx[is.na(pe.idx)] <- dummyID
+
     
     ## features from nearest peak start
     psF <- features[ps.idx]
@@ -53,7 +70,9 @@ getNearestFeatureIndicesAndDistances <- function(peaks, features) {
     peD <- ifelse(strand(peF) == "+", 1, -1) *
         (end(peaks) - start(peF))
 
-    
+    psD[ps.idx == dummyID] <- Inf # ensure that there is even no match if a seq with name "chrNA" exists
+    peD[pe.idx == dummyID] <- Inf # ensure that there is even no match if a seq with name "chrNA" exists
+   
     pse <- data.frame(ps=psD, pe=peD)
     j <- apply(pse, 1, function(i) which.min(abs(i)))
 
