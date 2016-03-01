@@ -154,8 +154,19 @@ annotatePeak <- function(peak,
             cat(">> adding gene annotation...\t\t\t",
                 format(Sys.time(), "%Y-%m-%d %X"), "\n")
         md <- metadata(TxDb)
-        IDType <- md[grep("Type of Gene ID", md[,1]), 2]
-        geneAnno <- addGeneAnno(annoDb, peak.gr$geneId, type=IDType)
+        .idtype <- md[grep("Type of Gene ID", md[,1]), 2]
+        if (length(.idtype) == 0 || is.na(.idtype) || is.null(.idtype)) {
+            if (grepl('ENSG', peak.gr$geneId[1])) {
+                .idtype <- "Ensemble Gene ID"
+            } else if (repl('^\\d+$',, peak.gr$geneId[1])) {
+                .idtype <- "Entrez Gene ID"                
+            } else {
+                warning("Unknown ID type, gene annotation will not be added...")
+                .idtype <- NA
+            }
+        }
+        
+        geneAnno <- addGeneAnno(annoDb, peak.gr$geneId, type=.idtype)
         if (! all(is.na(geneAnno))) {
             for(cn in colnames(geneAnno)[-1]) {
                 mcols(peak.gr)[[cn]] <- geneAnno[, cn]
