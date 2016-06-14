@@ -66,6 +66,7 @@ getAnnoStat <- function(x) {
 ##' @param ... additional parameter
 ##' @return plot
 ##' @usage vennpie(x, r=0.2, ...)
+##' @importFrom DOSE upsetplot
 ##' @exportMethod vennpie
 ##' @author Guangchuang Yu \url{http://ygc.name}
 setMethod("vennpie", signature(x="csAnno"),
