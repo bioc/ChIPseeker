@@ -23,6 +23,7 @@ getGeneAnno <- function(annoDb, geneID, type){
     }
 
     i <- which(!is.na(kk))
+    kk <- gsub("\\.\\d+$", "", kk) 
     ann <- suppressWarnings(select(annoDb,
                                    keys=kk[i],
                                    keytype=kt,

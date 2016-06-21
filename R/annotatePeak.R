@@ -195,7 +195,7 @@ annotatePeak <- function(peak,
         .idtype <- IDType(TxDb)
         if (length(.idtype) == 0 || is.na(.idtype) || is.null(.idtype)) {
             if (grepl('ENSG', peak.gr$geneId[1])) {
-                .idtype <- "Ensemble Gene ID"
+                .idtype <- "Ensembl Gene ID"
             } else if (grepl('^\\d+$',, peak.gr$geneId[1])) {
                 .idtype <- "Entrez Gene ID"                
             } else {
@@ -205,7 +205,7 @@ annotatePeak <- function(peak,
         }
 
         if (!is.na(.idtype)) {
-            peak.gr %<>% addGeneAnno(annoDb, IDType(TxDb))
+            peak.gr %<>% addGeneAnno(annoDb, .idtype)
         }
     }
     
