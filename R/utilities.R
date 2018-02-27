@@ -413,7 +413,10 @@ list_to_dataframe <- function(dataList) {
         }
         return(data[,cn])
     })
-    do.call('rbind', dataList2)
+    ##do.call('rbind', dataList2)
+    res <- do.call('rbind', dataList2)
+    res$.id <- factor(res$.id, levels=rev(names(dataList)))
+    return(res)
 }
 
 ##' @importFrom GenomicRanges GRangesList
