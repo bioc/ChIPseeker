@@ -5,13 +5,13 @@ vennpie.csAnno <- function(x, r=0.2) {
     distance <- as.data.frame(x)$distanceToTSS
     total <- nrow(detailGenomicAnnotation)
     Genic <- sum(detailGenomicAnnotation$genic)
-    
+
     Intergenic <- total-Genic
     Distal_Intergenic <- sum(detailGenomicAnnotation$distal_intergenic)
     Intron <- sum(detailGenomicAnnotation$Intron)
     Exon <- sum(detailGenomicAnnotation$Exon)
     Upstream <- sum(detailGenomicAnnotation$Promoter & distance < 0)
-    
+
     ## fiveUTR <- sum(detailGenomicAnnotation$fiveUTR)
     ## threeUTR <- sum(detailGenomicAnnotation$threeUTR)
     Downstream <- sum(detailGenomicAnnotation$downstream)
@@ -30,7 +30,7 @@ vennpie.csAnno <- function(x, r=0.2) {
                         Distal_Intergenic,
                         Downstream,
                         Intergenic-Distal_Intergenic-Downstream
-                        ),
+                        ) + 1,
                  radius=4*r,
                  startpos=pi/2,
                  col=cols[c("Exon", "NO", "NO", "Downstream", "NO")],
@@ -40,14 +40,14 @@ vennpie.csAnno <- function(x, r=0.2) {
                         Intron,
                         Distal_Intergenic,
                         Intergenic-Upstream-Distal_Intergenic,
-                        Upstream),
+                        Upstream) + 1,
                  radius=3*r,
                  startpos=pi/2,
                  col=cols[c("NO", "Intron", "Distal_Intergenic",
                      "NO", "Upstream")],
                  border=NA)
-    
-    floating.pie(0, 0, c(Genic, Intergenic),
+
+    floating.pie(0, 0, c(Genic, Intergenic) + 1,
                  radius=2*r,
                  startpos=pi/2,
                  col=cols[c("Genic", "Intergenic")],
