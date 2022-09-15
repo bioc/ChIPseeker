@@ -6,7 +6,7 @@
 
 + bug fixed of determining promoter region in minus strand (2021-12-16, Thu, #172)
 
-# ChIPseeker 1.32.2
+# ChIPseeker 1.31.2
 
 + update vignette
 

@@ -1,12 +1,24 @@
 ##' plot the overlap of a list of object
 ##'
 ##'
+##' There are two ways to plot, which users can specify through `by`.
+##' 
+##' The first way is to use `gplots` packages, by setting `by = gplots`. This method
+##' is default method. The venn plot produced through this way has no color.
+##' 
+##' The second way is to use `ggVennDiagram` packages, by setting `by = ggVennDiagram`. 
+##' The venn plot produced through this way has colors which can be defined by users using
+##' ggplot2 grammar e.g.(scale_fill_distiller()). And users can specify any details, like digital number,
+##' text size and showing percentage or not, by inputting `...` extra parameters.
+##' 
 ##' @title vennplot
 ##' @param Sets a list of object, can be vector or GRanges object
-##' @param by one of gplots or Vennerable
+##' @param by one of gplots, ggVennDiagram or Vennerable
+##' @param ... extra parameters using ggVennDiagram. Details see \link[ggVennDiagram]{ggVennDiagram}
 ##' @return venn plot that summarize the overlap of peaks
 ##' from different experiments or gene annotation from
 ##' different peak files.
+##' @importFrom ggVennDiagram ggVennDiagram
 ##' @importFrom gplots plot.venn
 ## @importFrom Vennerable Venn
 ## @importFrom grid grid.newpage
@@ -22,7 +34,7 @@
 ##' ## vennplot(genes)
 ##' @export
 ##' @author G Yu
-vennplot <- function(Sets, by="gplots") {
+vennplot <- function(Sets, by="gplots", ...) {
     if (is.null(names(Sets))) {
         nn <- paste0("Set", seq_along(Sets))
         warning("input is not a named list, set the name automatically to ", paste(nn, collapse = " "))
@@ -50,6 +62,8 @@ vennplot <- function(Sets, by="gplots") {
         vennCount <- as.matrix(overlapDF)
         class(vennCount) <- "venn"
         plot.venn(vennCount)
+    } else if(by == "ggVennDiagram"){
+        ggVennDiagram(Sets, ...)
     } else {
         stop("not supported...")
     }
