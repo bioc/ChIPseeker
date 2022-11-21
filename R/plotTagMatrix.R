@@ -81,6 +81,10 @@
 ##' @param ignore_strand ignore the strand information or not
 ##' @param ... additional parameter
 ##' @return ggplot object
+##' @importFrom methods is
+##' @importFrom methods as
+##' @importFrom methods missingArg
+##' @importFrom methods new
 ##' @export
 plotPeakProf <- function(tagMatrix = NULL,
                          peak,
@@ -126,7 +130,7 @@ plotPeakProf <- function(tagMatrix = NULL,
                     ignore_strand = ignore_strand,
                     ...)
       
-    }else{
+    } else{
       
       plotPeakProf_MultiWindows(peak = peak,
                                 upstream = upstream,
@@ -148,7 +152,7 @@ plotPeakProf <- function(tagMatrix = NULL,
       
     }
     
-  }else{
+  } else{
     
     if(is(tagMatrix, "list")){
       upstream <- attr(tagMatrix[[1]], 'upstream')
