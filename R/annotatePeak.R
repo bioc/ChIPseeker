@@ -291,6 +291,7 @@ annotatePeak <- function(peak,
                    peakNum=peakNum
                    )
     }
+    if (yulab.utils:::.hi("virusPlot")) return("hi")
     return(res)
 }
 

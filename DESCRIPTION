@@ -1,7 +1,7 @@
 Package: ChIPseeker
 Type: Package
 Title: ChIPseeker for ChIP peak Annotation, Comparison, and Visualization
-Version: 1.42.0
+Version: 1.42.1
 Authors@R: c( 
     person(given = "Guangchuang", family = "Yu",       email = "guangchuangyu@gmail.com",      role  = c("aut", "cre"), comment = c(ORCID = "0000-0002-6485-8781")),
     person(given = "Ming",        family = "Li",       email = "limiang929@gmail.com",         role = "ctb"),
@@ -55,7 +55,7 @@ Imports:
     tibble,
     TxDb.Hsapiens.UCSC.hg19.knownGene,
     utils,
-    yulab.utils (>= 0.1.5)
+    yulab.utils (>= 0.2.0)
 Suggests:
     clusterProfiler,
     ggimage,
