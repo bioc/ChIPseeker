@@ -1,3 +1,25 @@
+# ChIPseeker 1.49.2
+
++ `annotatePeak()` now reports `geneChr` and `geneStrand` as characters instead of
+  factor codes. `as.data.frame()` returns 'seqnames'/'strand' as factors and
+  assigning a factor into `mcols()` dropped the class, so both columns came out
+  as integers (e.g. `geneStrand` = 1/2 instead of +/-, and a wrong `geneChr`
+  whenever the seqlevels were not in numeric order) (issues #233, #247).
+  (2026-09-15, Tue)
++ `annotatePeak()` now warns when peaks are dropped because no feature of `TxDb`
+  can be found for them (e.g. peaks on contigs/scaffolds without genes, or a
+  seqlevels style mismatch). Previously they disappeared silently (issues
+  #251, #258). (2026-09-15, Tue)
++ `annotatePeak(..., sameStrand = TRUE)` no longer assigns a peak to a feature on
+  the opposite strand. Overlap detection in `getNearestFeatureIndicesAndDistances()`
+  was calling `findOverlaps()` with `unstrand(features)`, which bypassed `sameStrand`
+  and overrode the strand-aware nearest-feature result (issues #257, #258). Peaks
+  with ambiguous strand (`*`) are unaffected and still match features on any strand.
+  (2026-09-14, Mon)
++ `plotAnnoBar()` no longer uses the deprecated `ggplot2::aes_string()` (issue #268).
+  It follows the tidy evaluation idiom already used by `plotDistToTSS()`.
+  (2026-09-14, Mon)
+
 # ChIPseeker 1.49.1
 
 + Fixed bug in `getNearestFeatureIndicesAndDistances()` where results for

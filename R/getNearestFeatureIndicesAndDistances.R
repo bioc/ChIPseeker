@@ -34,8 +34,10 @@
 ##'   transcripts) to search for nearest features. Typically obtained from
 ##'   \code{getGene(TxDb)} or similar functions
 ##' @param sameStrand logical, whether to only consider features on the same
-##'   strand as the peak when finding nearest features. If FALSE, searches both
-##'   strands. Default is FALSE
+##'   strand as the peak, both when finding the nearest feature and when
+##'   detecting overlaps with it. If FALSE, searches both strands. Peaks with
+##'   ambiguous strand ('*') are compatible with features on any strand.
+##'   Default is FALSE
 ##' @param ignoreOverlap logical, whether to ignore overlaps between peaks and
 ##'   features when finding the nearest feature. If FALSE, overlapping features
 ##'   will be prioritized and assigned distance=0 (for TSS overlaps) or calculated
@@ -80,9 +82,9 @@ getNearestFeatureIndicesAndDistances <- function(peaks, features,
 
     overlap <- match.arg(overlap, c("TSS", "all"))
 
-   ### find overlap between peaks and features
+    ### find overlap between peaks and features
     if (!ignoreOverlap && overlap == "all") {
-        overlap_hit <- findOverlaps(peaks, unstrand(features))
+        overlap_hit <- findOverlaps(peaks, overlapFeature(features, sameStrand))
     }
 
     ## peaks only conatin all peak records, in GRanges object
@@ -198,7 +200,7 @@ getNearestFeatureIndicesAndDistances <- function(peaks, features,
             }
         } else {
             ## overlap == "TSS": find overlaps with TSS points (resized features of width 1, TSS sites only)
-            hit <- findOverlaps(peaks, unstrand(features))
+            hit <- findOverlaps(peaks, overlapFeature(features, sameStrand))
 
             if ( length(hit) != 0 ) {
                 qh <- queryHits(hit)
@@ -222,6 +224,27 @@ getNearestFeatureIndicesAndDistances <- function(peaks, features,
 
     return(res)
 }
+
+##' feature set used for overlap detection
+##'
+##' When \code{sameStrand=TRUE}, features keep their strand information so that
+##' a peak with an unambiguous strand (+ or -) is only matched to features on
+##' the same strand. Peaks with ambiguous strand ('*') are still compatible with
+##' features on any strand, which is the expected behaviour for peaks reported by
+##' unstranded peak callers.
+##'
+##' @param features GRanges object of features
+##' @param sameStrand logical
+##' @return GRanges object, stranded or unstranded depending on \code{sameStrand}
+##' @noRd
+##' @author G Yu
+overlapFeature <- function(features, sameStrand) {
+    if (sameStrand) {
+        return(features)
+    }
+    return(unstrand(features))
+}
+
 
 isPeakFeatureOverlap <- function(peak, feature) {
     peakRange <- ranges(peak)
