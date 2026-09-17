@@ -22,8 +22,10 @@ transcripts) to search for nearest features. Typically obtained from
 \code{getGene(TxDb)} or similar functions}
 
 \item{sameStrand}{logical, whether to only consider features on the same
-strand as the peak when finding nearest features. If FALSE, searches both
-strands. Default is FALSE}
+strand as the peak, both when finding the nearest feature and when
+detecting overlaps with it. If FALSE, searches both strands. Peaks with
+ambiguous strand ('*') are compatible with features on any strand.
+Default is FALSE}
 
 \item{ignoreOverlap}{logical, whether to ignore overlaps between peaks and
 features when finding the nearest feature. If FALSE, overlapping features
