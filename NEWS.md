@@ -5,7 +5,7 @@
   outage of that endpoint aborted `R CMD build` on the Bioconductor Linux
   builder (nebbiolo1) while building the vignettes. The example is kept as
   `eval = FALSE` with a precomputed figure (`figures/compareCluster_KEGG.png`),
-  consistent with the other cached figures in the vignette. (2026-11-03, Mon)
+  consistent with the other cached figures in the vignette. (2026-11-03, Tue)
 
 # ChIPseeker 1.47.1
 
