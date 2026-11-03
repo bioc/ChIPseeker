@@ -1,3 +1,12 @@
+# ChIPseeker 1.48.1
+
++ The vignette no longer evaluates the KEGG `compareCluster()` example at build
+  time. It calls `enrichKEGG()`, which fetches `rest.kegg.jp` live; a transient
+  outage of that endpoint aborted `R CMD build` on the Bioconductor Linux
+  builder (nebbiolo1) while building the vignettes. The example is kept as
+  `eval = FALSE` with a precomputed figure (`figures/compareCluster_KEGG.png`),
+  consistent with the other cached figures in the vignette. (2026-11-03, Mon)
+
 # ChIPseeker 1.47.1
 
 + fixed issue in 'test-txdb.R' as 'TxDb.Hsapiens.UCSC.hg19.knownGene' changes its transcript ID from UCSC (e.g., uc002qsd.4) to Ensembl (e.g., ENST00000487630.1_3) (2025-11-04, Tue)
